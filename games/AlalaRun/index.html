@@ -1,0 +1,1389 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ʻAlalā Run, a pixel-art Hawaiian forest runner.">
+  <title>ʻAlalā Run</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Courier New", Courier, monospace;
+      background: #071b16;
+      color: #fff8d2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-width: 1040px;
+      min-height: 650px;
+      margin: 0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      overflow: auto;
+      background:
+        linear-gradient(rgba(5, 25, 19, 0.92), rgba(3, 15, 12, 0.98)),
+        repeating-linear-gradient(45deg, #123a2c 0 12px, #0d3025 12px 24px);
+    }
+
+    button {
+      font: 700 20px/1 "Courier New", Courier, monospace;
+    }
+
+    .game-shell {
+      width: 976px;
+    }
+
+    .stage {
+      position: relative;
+      box-sizing: content-box;
+      width: 960px;
+      height: 540px;
+      overflow: hidden;
+      border: 8px solid #06130f;
+      outline: 4px solid #286443;
+      background: #75b99b;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    }
+
+    canvas {
+      display: block;
+      width: 960px;
+      height: 540px;
+      background: #75b99b;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .main-action {
+      position: absolute;
+      z-index: 4;
+      left: 50%;
+      bottom: 30px;
+      min-width: 190px;
+      padding: 14px 24px;
+      border: 4px solid #fff4b0;
+      color: #10251a;
+      background: #f0ba45;
+      box-shadow: 6px 6px 0 #153f2a;
+      transform: translateX(-50%);
+      cursor: pointer;
+    }
+
+    .main-action:hover,
+    .main-action:focus-visible {
+      color: #fffbea;
+      background: #c75936;
+      outline: 3px solid #fffbea;
+      outline-offset: 3px;
+    }
+
+    .main-action:active {
+      box-shadow: 2px 2px 0 #153f2a;
+      transform: translate(-50%, 4px);
+    }
+
+    .utility {
+      position: absolute;
+      z-index: 5;
+      top: 12px;
+      padding: 8px 10px;
+      border: 3px solid #fff4b0;
+      color: #fff8d2;
+      background: rgba(5, 24, 18, 0.82);
+      box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .utility:hover,
+    .utility:focus-visible {
+      background: #286443;
+      outline: 2px solid #fffbea;
+      outline-offset: 2px;
+    }
+
+    #pauseButton {
+      left: 12px;
+    }
+
+    #soundButton {
+      right: 12px;
+    }
+
+    .instructions {
+      margin: 22px 0 0;
+      color: #d3e8c3;
+      text-align: center;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    kbd {
+      display: inline-block;
+      min-width: 54px;
+      margin: 0 4px;
+      padding: 5px 8px;
+      border: 2px solid #f0d38a;
+      border-bottom-width: 5px;
+      color: #fff8d2;
+      background: #143d2d;
+      font: inherit;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="game-shell" aria-labelledby="gameTitle">
+    <h1 id="gameTitle" class="sr-only">ʻAlalā Run</h1>
+    <div class="stage">
+      <canvas
+        id="gameCanvas"
+        width="480"
+        height="270"
+        aria-label="ʻAlalā Run game. Guide a stick-carrying Hawaiian crow through a forest."
+      >Your browser does not support the canvas element required by ʻAlalā Run.</canvas>
+      <button id="mainAction" class="main-action" type="button">Start run</button>
+      <button id="pauseButton" class="utility hidden" type="button" aria-label="Pause game">Pause</button>
+      <button id="soundButton" class="utility" type="button" aria-pressed="false">Sound: on</button>
+      <p id="gameStatus" class="sr-only" aria-live="polite">Title screen</p>
+    </div>
+    <p id="instructions" class="instructions">
+      <kbd>Space</kbd> jump / flap &nbsp;&nbsp; <kbd>Shift</kbd> duck &nbsp;&nbsp; Survive 60 seconds
+    </p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const mainAction = document.getElementById("mainAction");
+      const pauseButton = document.getElementById("pauseButton");
+      const soundButton = document.getElementById("soundButton");
+      const gameStatus = document.getElementById("gameStatus");
+      const instructions = document.getElementById("instructions");
+
+      const WIDTH = canvas.width;
+      const HEIGHT = canvas.height;
+      const GROUND_Y = 226;
+      const STEP = 1 / 120;
+      const WIN_TIME = 60;
+      const GRAVITY = 1020;
+      const JUMP_VELOCITY = -355;
+      const FLAP_VELOCITY = -260;
+      const STATE = Object.freeze({
+        TITLE: "title",
+        PLAYING: "playing",
+        PAUSED: "paused",
+        LOST: "lost",
+        WON: "won"
+      });
+
+      const COLORS = Object.freeze({
+        ink: "#101815",
+        crow: "#151b1d",
+        crowLight: "#34454e",
+        beak: "#2f3431",
+        cream: "#fff4bd",
+        gold: "#efb73e",
+        orange: "#c85d34",
+        greenDark: "#16472e",
+        green: "#2f7546",
+        greenLight: "#6ea755",
+        sky: "#8fc5ac",
+        red: "#dd4b3e",
+        wood: "#75502f",
+        woodLight: "#a8793e"
+      });
+
+      const GLYPHS = Object.freeze({
+        "A": ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+        "D": ["11110", "10001", "10001", "10001", "10001", "10001", "11110"],
+        "E": ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
+        "H": ["10001", "10001", "10001", "11111", "10001", "10001", "10001"],
+        "L": ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+        "M": ["10001", "11011", "10101", "10101", "10001", "10001", "10001"],
+        "O": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+        "P": ["11110", "10001", "10001", "11110", "10000", "10000", "10000"],
+        "R": ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+        "S": ["01111", "10000", "10000", "01110", "00001", "00001", "11110"],
+        "U": ["10001", "10001", "10001", "10001", "10001", "10001", "01110"],
+        "N": ["10001", "11001", "11001", "10101", "10011", "10011", "10001"],
+        "a": ["01110", "00001", "01111", "10001", "10011", "01101", "00000"],
+        "l": ["110", "010", "010", "010", "010", "010", "111"],
+        "n": ["00000", "00000", "11110", "10001", "10001", "10001", "10001"],
+        "u": ["00000", "00000", "10001", "10001", "10001", "10011", "01101"],
+        "ʻ": ["011", "110", "100", "000", "000", "000", "000"],
+        " ": ["000", "000", "000", "000", "000", "000", "000"]
+      });
+
+      const player = {
+        x: 68,
+        feetY: GROUND_Y,
+        vy: 0,
+        grounded: true,
+        flapAvailable: true,
+        ducking: false,
+        flapTimer: 0,
+        runTimer: 0
+      };
+
+      let state = STATE.TITLE;
+      let stateBeforePause = STATE.PLAYING;
+      let obstacles = [];
+      let elapsed = 0;
+      let distance = 0;
+      let speed = 145;
+      let distanceSinceSpawn = 0;
+      let nextSpawnGap = 245;
+      let lastArrivalAt = 0;
+      let lastObstacleAction = null;
+      let backgroundBirds = [];
+      let winAnimationStart = 0;
+      let lastTime = performance.now();
+      let accumulator = 0;
+      let shiftHeld = false;
+      let muted = false;
+      let audioContext = null;
+
+      ctx.imageSmoothingEnabled = false;
+
+      function setStatus(message) {
+        gameStatus.textContent = message;
+      }
+
+      function setState(nextState) {
+        state = nextState;
+        mainAction.classList.toggle("hidden", nextState === STATE.PLAYING);
+        pauseButton.classList.toggle(
+          "hidden",
+          nextState !== STATE.PLAYING && nextState !== STATE.PAUSED
+        );
+        soundButton.classList.toggle("hidden", nextState === STATE.LOST);
+        instructions.classList.toggle("hidden", nextState === STATE.LOST);
+
+        if (nextState === STATE.TITLE) {
+          mainAction.textContent = "Start run";
+          setStatus("Title screen. Press Start run or Enter to begin.");
+        } else if (nextState === STATE.PLAYING) {
+          pauseButton.textContent = "Pause";
+          pauseButton.setAttribute("aria-label", "Pause game");
+          setStatus("Run started.");
+        } else if (nextState === STATE.PAUSED) {
+          mainAction.textContent = "Resume";
+          pauseButton.textContent = "Resume";
+          pauseButton.setAttribute("aria-label", "Resume game");
+          setStatus("Game paused.");
+        } else if (nextState === STATE.LOST) {
+          mainAction.textContent = "Hana hou!";
+          setStatus(`${Math.floor(elapsed)} seconds. Hana hou!`);
+        } else if (nextState === STATE.WON) {
+          mainAction.textContent = "Run again";
+          setStatus("You made it home. The run is complete.");
+        }
+      }
+
+      function resetPlayer() {
+        player.feetY = GROUND_Y;
+        player.vy = 0;
+        player.grounded = true;
+        player.flapAvailable = true;
+        player.ducking = false;
+        player.flapTimer = 0;
+        player.runTimer = 0;
+      }
+
+      function startGame() {
+        unlockAudio();
+        elapsed = 0;
+        distance = 0;
+        speed = 145;
+        distanceSinceSpawn = 0;
+        nextSpawnGap = 135;
+        lastArrivalAt = 0;
+        lastObstacleAction = null;
+        backgroundBirds = createBackgroundBirds();
+        obstacles = [];
+        shiftHeld = false;
+        accumulator = 0;
+        resetPlayer();
+        setState(STATE.PLAYING);
+        sound("start");
+      }
+
+      function loseGame() {
+        player.ducking = false;
+        shiftHeld = false;
+        setState(STATE.LOST);
+        sound("hit");
+        mainAction.focus({ preventScroll: true });
+      }
+
+      function winGame() {
+        elapsed = WIN_TIME;
+        winAnimationStart = performance.now() / 1000;
+        player.ducking = false;
+        shiftHeld = false;
+        setState(STATE.WON);
+        sound("win");
+        mainAction.focus({ preventScroll: true });
+      }
+
+      function togglePause() {
+        if (state === STATE.PLAYING) {
+          stateBeforePause = state;
+          shiftHeld = false;
+          player.ducking = false;
+          setState(STATE.PAUSED);
+          mainAction.focus({ preventScroll: true });
+        } else if (state === STATE.PAUSED && stateBeforePause === STATE.PLAYING) {
+          accumulator = 0;
+          lastTime = performance.now();
+          setState(STATE.PLAYING);
+          canvas.focus({ preventScroll: true });
+        }
+      }
+
+      function primaryAction() {
+        if (state === STATE.TITLE || state === STATE.LOST || state === STATE.WON) {
+          startGame();
+        } else if (state === STATE.PAUSED) {
+          togglePause();
+        }
+      }
+
+      function jumpOrFlap() {
+        if (state !== STATE.PLAYING) return;
+
+        unlockAudio();
+        if (player.grounded) {
+          player.grounded = false;
+          player.vy = JUMP_VELOCITY;
+          player.flapAvailable = true;
+          player.flapTimer = 0.2;
+          sound("flap");
+        } else if (player.flapAvailable) {
+          player.vy = Math.min(player.vy, FLAP_VELOCITY);
+          player.flapAvailable = false;
+          player.flapTimer = 0.24;
+          sound("flap");
+        }
+      }
+
+      function update(dt) {
+        elapsed += dt;
+        if (elapsed >= WIN_TIME) {
+          winGame();
+          return;
+        }
+
+        const progress = elapsed / WIN_TIME;
+        speed = 145 + 78 * progress;
+        distance += speed * dt;
+        updateBackgroundBirds(dt);
+        player.runTimer += dt;
+        player.flapTimer = Math.max(0, player.flapTimer - dt);
+        player.ducking = player.grounded && shiftHeld;
+
+        if (!player.grounded) {
+          player.vy += GRAVITY * dt;
+          player.feetY += player.vy * dt;
+          if (player.feetY >= GROUND_Y) {
+            player.feetY = GROUND_Y;
+            player.vy = 0;
+            player.grounded = true;
+            player.flapAvailable = true;
+          }
+        }
+
+        distanceSinceSpawn += speed * dt;
+        if (distanceSinceSpawn >= nextSpawnGap) {
+          spawnObstacle();
+          distanceSinceSpawn = 0;
+          nextSpawnGap = speed * (0.5 + Math.random() * 0.25) + 40;
+        }
+
+        for (const obstacle of obstacles) {
+          obstacle.age += dt;
+          obstacle.y = obstacle.baseY;
+          if (obstacle.type === "hawk") {
+            obstacle.y += Math.round(Math.sin(obstacle.age * 5 + obstacle.phase) * 2);
+          }
+          if (obstacle.delay > 0) {
+            obstacle.delay = Math.max(0, obstacle.delay - dt);
+          } else {
+            obstacle.x += obstacle.direction * speed * obstacle.speedFactor * dt;
+          }
+        }
+        obstacles = obstacles.filter((obstacle) => {
+          if (obstacle.direction < 0) return obstacle.x + obstacle.w > -20;
+          return obstacle.x < WIDTH + 20;
+        });
+
+        const playerBox = getPlayerHitbox();
+        for (const obstacle of obstacles) {
+          if (obstacle.delay > 0) continue;
+          if (intersects(playerBox, getObstacleHitbox(obstacle))) {
+            loseGame();
+            return;
+          }
+        }
+      }
+
+      function spawnObstacle() {
+        const choices = ["ohia", "koa"];
+        if (elapsed >= 8) choices.push("pig");
+        if (elapsed >= 14) choices.push("hawk");
+
+        let type = choices[Math.floor(Math.random() * choices.length)];
+        if (type === "koa" && Math.random() < 2 / 3) {
+          const alternatives = choices.filter((choice) => choice !== "koa");
+          type = alternatives[Math.floor(Math.random() * alternatives.length)];
+        }
+        const definitions = {
+          ohia: { w: 40, h: 49, y: GROUND_Y - 49 },
+          koa: { w: 36, h: 43, y: GROUND_Y - 43 },
+          pig: { w: 50, h: 31, y: GROUND_Y - 31 },
+          hawk: { w: 49, h: 26, y: 188 }
+        };
+        const definition = definitions[type];
+        const direction = type === "hawk" && Math.random() < 0.5 ? 1 : -1;
+        const hawkLanes = [145, 169, 188];
+        const baseY = type === "hawk"
+          ? hawkLanes[Math.floor(Math.random() * hawkLanes.length)]
+          : definition.y;
+        const speedFactor = type === "hawk" ? 0.92 + Math.random() * 0.2 : 1;
+        const startX = direction < 0 ? WIDTH + 16 : -definition.w - 18;
+        const travelDistance = direction < 0
+          ? startX - player.x
+          : player.x - startX;
+        const travelTime = travelDistance / (speed * speedFactor);
+        const action = type === "hawk"
+          ? baseY >= 184 ? "duck" : "air"
+          : "jump";
+        const actionGap = getActionGap(lastObstacleAction, action);
+        const earliestArrival = elapsed + travelTime + (direction > 0 ? 0.75 : 0);
+        const arrivalAt = Math.max(earliestArrival, lastArrivalAt + actionGap);
+        const obstacle = {
+          type,
+          x: startX,
+          y: baseY,
+          baseY,
+          w: definition.w,
+          h: definition.h,
+          age: 0,
+          phase: Math.random() * Math.PI * 2,
+          direction,
+          speedFactor,
+          delay: Math.max(0, arrivalAt - elapsed - travelTime),
+          variant: Math.random() < 0.45 ? "light" : "dark"
+        };
+
+        obstacles.push(obstacle);
+        lastArrivalAt = arrivalAt;
+        lastObstacleAction = action;
+      }
+
+      function getActionGap(previous, next) {
+        if (!previous) return 0;
+        if (previous === "jump" || next === "jump") return 0.92;
+        if (previous === "duck" && next === "duck") return 0.68;
+        return 0.74;
+      }
+
+      function getPlayerHitbox() {
+        if (player.ducking) {
+          return { x: player.x + 5, y: player.feetY - 15, w: 27, h: 12 };
+        }
+        return { x: player.x + 5, y: player.feetY - 24, w: 23, h: 21 };
+      }
+
+      function getObstacleHitbox(obstacle) {
+        if (obstacle.type === "hawk") {
+          return { x: obstacle.x + 7, y: obstacle.y + 6, w: 35, h: 12 };
+        }
+        if (obstacle.type === "pig") {
+          return { x: obstacle.x + 5, y: obstacle.y + 6, w: 40, h: 24 };
+        }
+        if (obstacle.type === "koa") {
+          return { x: obstacle.x + 5, y: obstacle.y + 6, w: 26, h: 37 };
+        }
+        return { x: obstacle.x + 6, y: obstacle.y + 5, w: 28, h: 44 };
+      }
+
+      function intersects(a, b) {
+        return (
+          a.x < b.x + b.w &&
+          a.x + a.w > b.x &&
+          a.y < b.y + b.h &&
+          a.y + a.h > b.y
+        );
+      }
+
+      function render(time) {
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        if (state === STATE.TITLE) {
+          drawTitleScreen(time);
+          return;
+        }
+        if (state === STATE.WON) {
+          drawWinScreen(time);
+          return;
+        }
+
+        drawWorld(time);
+        drawObstacles();
+        drawPlayer();
+        drawHud();
+
+        if (state === STATE.PAUSED) drawPauseOverlay();
+        if (state === STATE.LOST) drawLoseOverlay();
+      }
+
+      function drawWorld(time) {
+        ctx.fillStyle = COLORS.sky;
+        ctx.fillRect(0, 0, WIDTH, GROUND_Y);
+
+        ctx.fillStyle = "#c4d7a3";
+        ctx.fillRect(0, 57, WIDTH, 46);
+        drawCloud(42 - (distance * 0.04) % 550, 34);
+        drawCloud(280 - (distance * 0.025) % 620, 54);
+
+        ctx.fillStyle = "#51875b";
+        for (let i = -1; i < 8; i += 1) {
+          const x = Math.floor(i * 84 - (distance * 0.11) % 84);
+          drawDistantTree(x, 95 + ((i + 8) % 2) * 9);
+        }
+
+        drawForestBirds();
+
+        ctx.fillStyle = "#2e6944";
+        ctx.fillRect(0, 171, WIDTH, 55);
+        for (let i = -1; i < 11; i += 1) {
+          const x = Math.floor(i * 52 - (distance * 0.23) % 52);
+          drawShrub(x, 162 + ((i + 11) % 3) * 5);
+        }
+
+        ctx.fillStyle = "#714e30";
+        ctx.fillRect(0, GROUND_Y, WIDTH, HEIGHT - GROUND_Y);
+        ctx.fillStyle = "#396d3b";
+        ctx.fillRect(0, GROUND_Y, WIDTH, 5);
+        ctx.fillStyle = "#95673a";
+        for (let x = -20; x < WIDTH + 20; x += 28) {
+          const offset = Math.floor(distance % 28);
+          ctx.fillRect(x - offset, 239 + ((x / 28) & 1) * 10, 8, 3);
+        }
+
+        const light = 0.5 + Math.sin(time * 0.6) * 0.04;
+        ctx.fillStyle = `rgba(255, 244, 184, ${light * 0.1})`;
+        ctx.fillRect(0, 0, WIDTH, 2);
+      }
+
+      function drawCloud(x, y) {
+        ctx.fillStyle = "#e9e3bd";
+        ctx.fillRect(Math.floor(x), y + 5, 42, 7);
+        ctx.fillRect(Math.floor(x) + 8, y, 19, 12);
+        ctx.fillRect(Math.floor(x) + 25, y + 3, 12, 8);
+      }
+
+      function drawDistantTree(x, y) {
+        ctx.fillStyle = "#315f42";
+        ctx.fillRect(x + 17, y + 31, 6, 49);
+        ctx.fillStyle = "#51875b";
+        ctx.fillRect(x + 4, y + 14, 34, 24);
+        ctx.fillRect(x + 11, y + 3, 23, 40);
+        ctx.fillRect(x, y + 22, 44, 12);
+      }
+
+      function drawShrub(x, y) {
+        ctx.fillStyle = "#245c39";
+        ctx.fillRect(x, y + 13, 47, 30);
+        ctx.fillRect(x + 8, y + 5, 31, 37);
+        ctx.fillStyle = "#4e8a4b";
+        ctx.fillRect(x + 4, y + 12, 13, 8);
+        ctx.fillRect(x + 25, y + 7, 16, 9);
+      }
+
+      function createBackgroundBirds() {
+        return [
+          { species: "pueo", x: 425, baseY: 42, y: 42, scale: 1.05, direction: -1, speed: 10, phase: 0.4, age: 0, alpha: 0.58 },
+          { species: "iiwi", x: 105, baseY: 71, y: 71, scale: 0.9, direction: 1, speed: 14, phase: 1.7, age: 0, alpha: 0.78 },
+          { species: "amakihi", x: 285, baseY: 88, y: 88, scale: 0.72, direction: -1, speed: 17, phase: 3.1, age: 0, alpha: 0.7 },
+          { species: "palila", x: 36, baseY: 116, y: 116, scale: 0.86, direction: 1, speed: 11, phase: 4.4, age: 0, alpha: 0.72 },
+          { species: "elepaio", x: 360, baseY: 147, y: 147, scale: 0.8, direction: -1, speed: 13, phase: 2.5, age: 0, alpha: 0.76 },
+          { species: "iiwi", x: 455, baseY: 126, y: 126, scale: 0.68, direction: -1, speed: 21, phase: 5.3, age: 0, alpha: 0.62 },
+          { species: "amakihi", x: 160, baseY: 139, y: 139, scale: 0.62, direction: 1, speed: 15, phase: 0.8, age: 0, alpha: 0.64 },
+          { species: "palila", x: 255, baseY: 58, y: 58, scale: 0.7, direction: -1, speed: 12, phase: 3.8, age: 0, alpha: 0.59 },
+          { species: "elepaio", x: 65, baseY: 153, y: 153, scale: 0.62, direction: 1, speed: 10, phase: 5.8, age: 0, alpha: 0.62 },
+          { species: "pueo", x: 205, baseY: 99, y: 99, scale: 0.72, direction: 1, speed: 8, phase: 2.2, age: 0, alpha: 0.48 }
+        ];
+      }
+
+      function updateBackgroundBirds(dt) {
+        for (const bird of backgroundBirds) {
+          bird.age += dt;
+          bird.x += bird.direction * bird.speed * dt;
+          bird.y = bird.baseY + Math.sin(bird.age * 2.6 + bird.phase) * (bird.species === "pueo" ? 2 : 4);
+
+          if (bird.direction < 0 && bird.x < -55) bird.x = WIDTH + 55;
+          if (bird.direction > 0 && bird.x > WIDTH + 55) bird.x = -55;
+        }
+      }
+
+      function drawForestBirds() {
+        for (const bird of backgroundBirds) {
+          ctx.save();
+          ctx.globalAlpha = bird.alpha;
+          ctx.translate(Math.round(bird.x), Math.round(bird.y));
+          ctx.scale(bird.direction * bird.scale, bird.scale);
+
+          const wingsUp = Math.floor(bird.age * (bird.species === "pueo" ? 4 : 7)) % 2 === 0;
+          if (bird.species === "iiwi") drawIiwi(wingsUp);
+          if (bird.species === "amakihi") drawAmakihi(wingsUp);
+          if (bird.species === "palila") drawPalila(wingsUp);
+          if (bird.species === "elepaio") drawElepaio(wingsUp);
+          if (bird.species === "pueo") drawPueo(wingsUp);
+          ctx.restore();
+        }
+      }
+
+      function drawIiwi(wingsUp) {
+        ctx.fillStyle = "#c9332e";
+        ctx.fillRect(-7, -4, 13, 9);
+        ctx.fillRect(3, -6, 7, 8);
+        ctx.fillStyle = "#202326";
+        ctx.fillRect(-12, 1, 7, 4);
+        ctx.fillRect(-5, wingsUp ? -9 : -1, 9, 5);
+        if (!wingsUp) ctx.fillRect(-2, 3, 8, 4);
+        ctx.fillStyle = "#e79463";
+        ctx.fillRect(9, -4, 7, 2);
+        ctx.fillRect(14, -2, 3, 2);
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(7, -4, 1, 1);
+      }
+
+      function drawAmakihi(wingsUp) {
+        ctx.fillStyle = "#a8b93f";
+        ctx.fillRect(-6, -3, 12, 7);
+        ctx.fillRect(3, -5, 6, 7);
+        ctx.fillStyle = "#58652c";
+        ctx.fillRect(-10, 1, 6, 3);
+        ctx.fillRect(-4, wingsUp ? -7 : 0, 8, 4);
+        ctx.fillStyle = "#2d3425";
+        ctx.fillRect(8, -3, 6, 1);
+        ctx.fillRect(13, -2, 2, 1);
+        ctx.fillRect(6, -3, 1, 1);
+      }
+
+      function drawPalila(wingsUp) {
+        ctx.fillStyle = "#7e8074";
+        ctx.fillRect(-7, -3, 14, 8);
+        ctx.fillStyle = "#dbc94c";
+        ctx.fillRect(3, -6, 8, 8);
+        ctx.fillRect(-1, 0, 8, 5);
+        ctx.fillStyle = "#565b58";
+        ctx.fillRect(-12, 1, 6, 4);
+        ctx.fillRect(-5, wingsUp ? -8 : 0, 8, 4);
+        ctx.fillStyle = "#ded2a3";
+        ctx.fillRect(10, -4, 6, 4);
+        ctx.fillStyle = COLORS.ink;
+        ctx.fillRect(8, -4, 1, 1);
+      }
+
+      function drawElepaio(wingsUp) {
+        ctx.fillStyle = "#76513c";
+        ctx.fillRect(-6, -4, 12, 8);
+        ctx.fillRect(3, -6, 7, 7);
+        ctx.fillRect(-11, -2, 6, 3);
+        ctx.fillRect(-12, -7, 3, 7);
+        ctx.fillStyle = "#e8dfc2";
+        ctx.fillRect(-3, 1, 8, 4);
+        ctx.fillRect(5, -2, 4, 3);
+        ctx.fillStyle = "#4b3529";
+        ctx.fillRect(-4, wingsUp ? -8 : -1, 8, 4);
+        ctx.fillRect(9, -4, 4, 1);
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(7, -4, 1, 1);
+      }
+
+      function drawPueo(wingsUp) {
+        ctx.fillStyle = "#8a6d4e";
+        ctx.fillRect(-8, -5, 17, 11);
+        ctx.fillRect(5, -7, 9, 9);
+        ctx.fillRect(-12, -2, 6, 5);
+        ctx.fillRect(-22, wingsUp ? -7 : -2, 16, 5);
+        ctx.fillRect(8, wingsUp ? -5 : 1, 17, 5);
+        ctx.fillStyle = "#bba47a";
+        ctx.fillRect(7, -5, 5, 5);
+        ctx.fillRect(-5, -2, 10, 3);
+        ctx.fillStyle = "#2f281e";
+        ctx.fillRect(8, -4, 1, 1);
+        ctx.fillRect(11, -4, 1, 1);
+        ctx.fillStyle = "#d2b75e";
+        ctx.fillRect(10, -2, 2, 2);
+      }
+
+      function drawHud() {
+        const secondsLeft = Math.max(0, Math.ceil(WIN_TIME - elapsed));
+        ctx.fillStyle = "rgba(8, 34, 25, 0.84)";
+        ctx.fillRect(171, 8, 138, 23);
+        ctx.fillStyle = COLORS.cream;
+        ctx.font = "bold 10px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${Math.floor(elapsed)} SEC  •  HOME ${secondsLeft}`, 240, 17);
+
+        ctx.fillStyle = "#102d21";
+        ctx.fillRect(182, 24, 116, 3);
+        ctx.fillStyle = COLORS.gold;
+        ctx.fillRect(182, 24, Math.floor(116 * Math.min(1, elapsed / WIN_TIME)), 3);
+      }
+
+      function drawObstacles() {
+        for (const obstacle of obstacles) {
+          const x = Math.round(obstacle.x);
+          if (obstacle.type === "ohia") drawOhia(x, obstacle.y);
+          if (obstacle.type === "koa") drawKoa(x, obstacle.y);
+          if (obstacle.type === "pig") drawPig(x, obstacle.y, obstacle.age);
+          if (obstacle.type === "hawk") {
+            if (obstacle.delay > 0 && obstacle.direction > 0) {
+              drawHawkWarning(obstacle.y, obstacle.age);
+            }
+            drawHawk(
+              x,
+              obstacle.y,
+              obstacle.age,
+              obstacle.direction,
+              obstacle.variant
+            );
+          }
+        }
+      }
+
+      function drawOhia(x, y) {
+        ctx.fillStyle = COLORS.wood;
+        ctx.fillRect(x + 17, y + 10, 7, 39);
+        ctx.fillRect(x + 9, y + 23, 11, 5);
+        ctx.fillRect(x + 5, y + 18, 6, 13);
+        ctx.fillRect(x + 22, y + 17, 12, 5);
+        ctx.fillRect(x + 29, y + 11, 5, 12);
+        ctx.fillStyle = COLORS.woodLight;
+        ctx.fillRect(x + 20, y + 16, 2, 29);
+        ctx.fillRect(x + 8, y + 24, 9, 2);
+        ctx.fillStyle = "#2f6841";
+        ctx.fillRect(x + 1, y + 14, 12, 11);
+        ctx.fillRect(x + 7, y + 7, 15, 12);
+        ctx.fillRect(x + 17, y + 3, 15, 13);
+        ctx.fillRect(x + 28, y + 8, 11, 13);
+        ctx.fillRect(x + 4, y + 28, 13, 10);
+        ctx.fillRect(x + 24, y + 23, 13, 11);
+        ctx.fillStyle = "#4c8b4d";
+        ctx.fillRect(x + 4, y + 16, 5, 5);
+        ctx.fillRect(x + 11, y + 9, 6, 4);
+        ctx.fillRect(x + 22, y + 5, 6, 5);
+        ctx.fillRect(x + 31, y + 11, 5, 5);
+        ctx.fillRect(x + 27, y + 25, 6, 5);
+        ctx.fillStyle = COLORS.red;
+        ctx.fillRect(x + 1, y + 10, 5, 5);
+        ctx.fillRect(x + 10, y + 4, 5, 5);
+        ctx.fillRect(x + 23, y, 6, 5);
+        ctx.fillRect(x + 34, y + 5, 5, 5);
+        ctx.fillRect(x + 32, y + 21, 5, 5);
+        ctx.fillRect(x + 5, y + 26, 5, 5);
+        ctx.fillStyle = COLORS.gold;
+        ctx.fillRect(x, y + 8, 1, 4);
+        ctx.fillRect(x + 7, y + 7, 1, 4);
+        ctx.fillRect(x + 20, y, 1, 4);
+        ctx.fillRect(x + 31, y, 1, 4);
+        ctx.fillRect(x + 37, y + 3, 1, 3);
+        ctx.fillRect(x + 39, y + 8, 1, 3);
+        ctx.fillStyle = "#4f351f";
+        ctx.fillRect(x + 12, y + 46, 19, 3);
+      }
+
+      function drawKoa(x, y) {
+        ctx.fillStyle = COLORS.wood;
+        ctx.fillRect(x + 3, y + 23, 29, 16);
+        ctx.fillRect(x + 9, y + 15, 10, 28);
+        ctx.fillRect(x, y + 36, 36, 7);
+        ctx.fillRect(x + 26, y + 18, 6, 12);
+        ctx.fillStyle = COLORS.woodLight;
+        ctx.fillRect(x + 7, y + 26, 21, 4);
+        ctx.fillRect(x + 14, y + 17, 3, 18);
+        ctx.fillRect(x + 4, y + 34, 15, 2);
+        ctx.fillStyle = "#4a2e1d";
+        ctx.fillRect(x + 20, y + 31, 12, 3);
+        ctx.fillRect(x + 31, y + 26, 4, 9);
+        ctx.fillStyle = "#326b40";
+        ctx.fillRect(x + 3, y + 8, 12, 11);
+        ctx.fillRect(x + 11, y + 3, 14, 13);
+        ctx.fillRect(x + 22, y + 8, 12, 12);
+        ctx.fillRect(x + 27, y + 15, 9, 9);
+        ctx.fillStyle = "#66a052";
+        ctx.fillRect(x + 5, y + 9, 7, 4);
+        ctx.fillRect(x + 14, y + 5, 8, 4);
+        ctx.fillRect(x + 24, y + 10, 7, 4);
+        ctx.fillRect(x + 29, y + 17, 5, 3);
+        ctx.fillStyle = "#d8a846";
+        ctx.fillRect(x + 8, y + 6, 2, 2);
+        ctx.fillRect(x + 21, y + 2, 2, 2);
+        ctx.fillRect(x + 33, y + 12, 2, 2);
+      }
+
+      function drawPig(x, y, age) {
+        const stride = Math.floor(age * 11) % 2;
+        ctx.fillStyle = "#171918";
+        ctx.fillRect(x + 7, y + 8, 32, 18);
+        ctx.fillRect(x + 3, y + 12, 10, 13);
+        ctx.fillRect(x + 36, y + 11, 10, 13);
+        ctx.fillRect(x + 43, y + 16, 7, 6);
+        ctx.fillRect(x + 10, y + 25, 6, 6 - stride);
+        ctx.fillRect(x + 33, y + 24 + stride, 6, 7 - stride);
+        ctx.fillStyle = "#454039";
+        ctx.fillRect(x + 9, y + 5, 9, 6);
+        ctx.fillRect(x + 35, y + 7, 8, 6);
+        ctx.fillRect(x + 13, y + 10, 19, 4);
+        ctx.fillStyle = "#6b5c4c";
+        ctx.fillRect(x + 43, y + 17, 5, 3);
+        ctx.fillRect(x + 23, y + 23, 8, 2);
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(x + 44, y + 21, 5, 2);
+        ctx.fillRect(x + 2, y + 20, 3, 2);
+        ctx.fillStyle = COLORS.red;
+        ctx.fillRect(x + 40, y + 13, 2, 2);
+        ctx.fillStyle = COLORS.ink;
+        ctx.fillRect(x + 47, y + 18, 2, 2);
+        ctx.fillStyle = "#2d302d";
+        ctx.fillRect(x, y + 9, 4, 3);
+        ctx.fillRect(x, y + 7, 2, 3);
+      }
+
+      function drawHawkWarning(y, age) {
+        if (Math.floor(age * 7) % 2 !== 0) return;
+        ctx.fillStyle = COLORS.gold;
+        ctx.fillRect(3, y + 6, 4, 14);
+        ctx.fillRect(7, y + 9, 4, 8);
+        ctx.fillRect(11, y + 12, 4, 2);
+        ctx.fillStyle = COLORS.orange;
+        ctx.fillRect(3, y + 3, 3, 3);
+      }
+
+      function drawHawk(x, y, age, direction, variant) {
+        const wingFrame = Math.floor(age * 9) % 3;
+        const body = variant === "light" ? "#8a6544" : "#56361f";
+        const feather = variant === "light" ? "#b48a5c" : "#795033";
+
+        ctx.save();
+        ctx.translate(direction < 0 ? x + 49 : x, y);
+        if (direction < 0) ctx.scale(-1, 1);
+
+        ctx.fillStyle = body;
+        ctx.fillRect(13, 8, 25, 12);
+        ctx.fillRect(34, 6, 10, 12);
+        ctx.fillRect(5, 11, 12, 8);
+        ctx.fillRect(1, 9, 8, 4);
+        ctx.fillRect(2, 18, 12, 4);
+
+        if (wingFrame === 0) {
+          ctx.fillRect(14, 1, 11, 12);
+          ctx.fillRect(20, 0, 13, 6);
+          ctx.fillRect(18, 18, 14, 7);
+        } else if (wingFrame === 1) {
+          ctx.fillRect(12, 5, 20, 8);
+          ctx.fillRect(17, 17, 17, 5);
+        } else {
+          ctx.fillRect(14, 10, 12, 14);
+          ctx.fillRect(20, 20, 14, 6);
+          ctx.fillRect(18, 2, 14, 6);
+        }
+
+        ctx.fillStyle = feather;
+        ctx.fillRect(17, 10, 17, 4);
+        ctx.fillRect(20, 15, 13, 3);
+        if (wingFrame === 0) ctx.fillRect(19, 3, 11, 3);
+        if (wingFrame === 2) ctx.fillRect(17, 17, 7, 5);
+
+        ctx.fillStyle = "#d5aa4d";
+        ctx.fillRect(43, 10, 6, 3);
+        ctx.fillRect(41, 18, 3, 3);
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(38, 8, 3, 3);
+        ctx.fillStyle = COLORS.ink;
+        ctx.fillRect(40, 9, 1, 1);
+        ctx.fillRect(9, 20, 3, 2);
+        ctx.restore();
+      }
+
+      function drawPlayer() {
+        const x = Math.round(player.x);
+        const feet = Math.round(player.feetY);
+        if (player.ducking) {
+          drawDuckCrow(x, feet);
+          return;
+        }
+
+        const y = feet - 28;
+        const airborne = !player.grounded;
+        const wingUp = player.flapTimer > 0.11 || (airborne && player.vy < 0);
+
+        ctx.fillStyle = COLORS.crow;
+        ctx.fillRect(x + 5, y + 9, 21, 15);
+        ctx.fillRect(x + 20, y + 3, 11, 13);
+        ctx.fillRect(x + 2, y + 17, 9, 7);
+        ctx.fillRect(x, y + 21, 10, 4);
+
+        if (wingUp) {
+          ctx.fillRect(x + 7, y + 1, 9, 15);
+          ctx.fillRect(x + 11, y, 10, 6);
+          ctx.fillStyle = COLORS.crowLight;
+          ctx.fillRect(x + 10, y + 4, 4, 9);
+        } else {
+          ctx.fillRect(x + 9, y + 13, 15, 10);
+          ctx.fillStyle = COLORS.crowLight;
+          ctx.fillRect(x + 12, y + 15, 11, 3);
+          ctx.fillRect(x + 13, y + 20, 7, 2);
+        }
+
+        ctx.fillStyle = COLORS.beak;
+        ctx.fillRect(x + 29, y + 8, 8, 4);
+        ctx.fillRect(x + 34, y + 11, 5, 2);
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(x + 26, y + 6, 2, 2);
+        ctx.fillStyle = COLORS.ink;
+        ctx.fillRect(x + 27, y + 6, 1, 1);
+
+        ctx.fillStyle = COLORS.woodLight;
+        ctx.fillRect(x + 35, y + 12, 18, 2);
+        ctx.fillRect(x + 48, y + 9, 2, 6);
+
+        if (player.grounded) {
+          const step = Math.floor(player.runTimer * 12) % 2;
+          ctx.fillStyle = COLORS.ink;
+          ctx.fillRect(x + 13, y + 23, 2, 5 - step);
+          ctx.fillRect(x + 22, y + 23 + step, 2, 5 - step);
+        }
+      }
+
+      function drawDuckCrow(x, feet) {
+        const y = feet - 18;
+        ctx.fillStyle = COLORS.crow;
+        ctx.fillRect(x + 4, y + 6, 27, 11);
+        ctx.fillRect(x + 25, y + 3, 10, 11);
+        ctx.fillRect(x, y + 11, 10, 5);
+        ctx.fillStyle = COLORS.crowLight;
+        ctx.fillRect(x + 10, y + 9, 13, 4);
+        ctx.fillStyle = COLORS.beak;
+        ctx.fillRect(x + 34, y + 8, 8, 3);
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(x + 30, y + 6, 2, 2);
+        ctx.fillStyle = COLORS.ink;
+        ctx.fillRect(x + 31, y + 6, 1, 1);
+        ctx.fillStyle = COLORS.woodLight;
+        ctx.fillRect(x + 39, y + 11, 17, 2);
+        ctx.fillRect(x + 51, y + 8, 2, 6);
+      }
+
+      function drawTitleScreen(time) {
+        ctx.fillStyle = "#2e7446";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        ctx.fillStyle = "#265e39";
+        for (let x = 0; x < WIDTH; x += 24) {
+          const rise = ((x / 24) % 3) * 5;
+          ctx.fillRect(x, 185 - rise, 18, 85 + rise);
+          ctx.fillRect(x + 5, 174 - rise, 9, 22);
+        }
+
+        drawPixelText("ʻAlalā Run", WIDTH / 2, 24, 5, COLORS.cream);
+        ctx.fillStyle = COLORS.gold;
+        ctx.fillRect(151, 72, 178, 3);
+
+        const bob = Math.round(Math.sin(time * 3) * 2);
+        drawHeart(240, 91 + bob, 3);
+        drawNestPair(240, 181, 1.45);
+
+        ctx.fillStyle = COLORS.cream;
+        ctx.font = "bold 10px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("BRING A STICK HOME THROUGH THE FOREST", 240, 218);
+      }
+
+      function drawLoseOverlay() {
+        ctx.fillStyle = "rgba(3, 11, 9, 0.78)";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        ctx.fillStyle = COLORS.cream;
+        ctx.font = "bold 22px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${Math.floor(elapsed)} seconds`, WIDTH / 2, 111);
+      }
+
+      function drawPauseOverlay() {
+        ctx.fillStyle = "rgba(3, 11, 9, 0.72)";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        drawPixelText("PAUSED", WIDTH / 2, 86, 4, COLORS.cream);
+      }
+
+      function drawWinScreen(time) {
+        const cycle = ((time - winAnimationStart) % 6.4 + 6.4) % 6.4;
+        ctx.fillStyle = "#4b8a50";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        ctx.fillStyle = "#8ec06b";
+        ctx.fillRect(0, 55, WIDTH, 113);
+
+        ctx.fillStyle = "#2c6840";
+        for (let x = -8; x < WIDTH; x += 38) {
+          ctx.fillRect(x, 140, 31, 130);
+          ctx.fillRect(x + 8, 121 + (x % 3) * 3, 18, 45);
+        }
+
+        drawPixelText("HOME", WIDTH / 2, 18, 5, COLORS.cream);
+        drawVictoryAnimation(cycle);
+
+        if (cycle > 5.7) {
+          ctx.fillStyle = `rgba(75, 138, 80, ${Math.min(1, (cycle - 5.7) / 0.7)})`;
+          ctx.fillRect(0, 55, WIDTH, 174);
+        }
+      }
+
+      function drawVictoryAnimation(cycle) {
+        const nestX = 300;
+        const nestY = 184;
+        const landed = cycle >= 2.8;
+
+        ctx.save();
+        ctx.translate(nestX, nestY);
+        ctx.scale(1.55, 1.55);
+
+        ctx.fillStyle = "#6b472c";
+        ctx.fillRect(-48, -8, 96, 8);
+        ctx.fillRect(-43, -1, 86, 9);
+        ctx.fillStyle = COLORS.woodLight;
+        ctx.fillRect(-44, -6, 35, 3);
+        ctx.fillRect(3, -2, 40, 3);
+
+        drawNestCrow(42, -34, -1);
+        if (landed) drawNestCrow(-42, -34, 1);
+
+        drawNestEgg(-13, -9, 0);
+        drawNestEgg(0, -12, 1);
+        drawNestEgg(13, -8, 2);
+
+        ctx.fillStyle = COLORS.wood;
+        ctx.fillRect(-49, 0, 98, 7);
+        ctx.fillRect(-42, 7, 84, 8);
+        ctx.fillRect(-32, 15, 64, 7);
+        ctx.fillStyle = COLORS.woodLight;
+        ctx.fillRect(-45, 2, 30, 3);
+        ctx.fillRect(8, 8, 35, 3);
+        ctx.fillRect(-25, 16, 29, 3);
+
+        if (landed) {
+          ctx.fillStyle = "#d0a04e";
+          ctx.fillRect(-47, -3, 63, 2);
+          ctx.fillRect(-26, -6, 3, 5);
+          ctx.fillRect(11, -8, 3, 7);
+        }
+        ctx.restore();
+
+        if (!landed) {
+          const progress = Math.min(1, cycle / 2.8);
+          const eased = progress * progress * (3 - 2 * progress);
+          const x = -42 + (252 + 42) * eased;
+          const y = 101 + (150 - 101) * eased - Math.sin(progress * Math.PI) * 28;
+          drawVictoryFlyingAlala(x, y, cycle, 1.28);
+        }
+
+        if (cycle >= 2.9) {
+          const heartAlpha = Math.min(1, (cycle - 2.9) * 2.5);
+          const heartScale = 3 + (Math.sin(cycle * 5) > 0.6 ? 1 : 0);
+          ctx.save();
+          ctx.globalAlpha = heartAlpha;
+          drawHeart(nestX, 78 + Math.round(Math.sin(cycle * 3) * 2), heartScale);
+          ctx.restore();
+        }
+      }
+
+      function drawNestEgg(x, y, speckle) {
+        ctx.fillStyle = "#b4d8c5";
+        ctx.fillRect(x - 5, y, 10, 9);
+        ctx.fillRect(x - 3, y - 3, 6, 13);
+        ctx.fillStyle = "#718f72";
+        ctx.fillRect(x - 2 + speckle, y + 2, 1, 1);
+        ctx.fillRect(x + 2 - speckle, y + 5, 1, 1);
+      }
+
+      function drawVictoryFlyingAlala(x, y, age, scale) {
+        const wingFrame = Math.floor(age * 9) % 3;
+        ctx.save();
+        ctx.translate(Math.round(x), Math.round(y));
+        ctx.scale(scale, scale);
+
+        ctx.fillStyle = COLORS.crow;
+        ctx.fillRect(-13, -5, 25, 13);
+        ctx.fillRect(8, -11, 12, 13);
+        ctx.fillRect(-20, 1, 10, 6);
+        ctx.fillRect(-23, 5, 12, 4);
+
+        if (wingFrame === 0) {
+          ctx.fillRect(-8, -17, 11, 16);
+          ctx.fillRect(-3, -18, 12, 6);
+        } else if (wingFrame === 1) {
+          ctx.fillRect(-8, -7, 18, 9);
+        } else {
+          ctx.fillRect(-7, 2, 15, 13);
+          ctx.fillRect(-2, 11, 12, 5);
+        }
+
+        ctx.fillStyle = COLORS.crowLight;
+        if (wingFrame === 0) ctx.fillRect(-5, -14, 5, 10);
+        if (wingFrame === 1) ctx.fillRect(-4, -4, 12, 3);
+        if (wingFrame === 2) ctx.fillRect(-3, 5, 7, 8);
+
+        ctx.fillStyle = COLORS.beak;
+        ctx.fillRect(19, -7, 9, 4);
+        ctx.fillRect(25, -4, 5, 2);
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(15, -8, 2, 2);
+        ctx.fillStyle = COLORS.ink;
+        ctx.fillRect(16, -8, 1, 1);
+        ctx.fillStyle = COLORS.woodLight;
+        ctx.fillRect(26, -3, 23, 2);
+        ctx.fillRect(43, -7, 2, 7);
+        ctx.restore();
+      }
+
+      function drawNestPair(cx, cy, scale) {
+        ctx.save();
+        ctx.translate(Math.round(cx), Math.round(cy));
+        ctx.scale(scale, scale);
+
+        drawNestCrow(-42, -30, 1);
+        drawNestCrow(42, -30, -1);
+
+        ctx.fillStyle = COLORS.wood;
+        ctx.fillRect(-45, -5, 90, 7);
+        ctx.fillRect(-39, 2, 78, 8);
+        ctx.fillRect(-30, 10, 60, 7);
+        ctx.fillStyle = COLORS.woodLight;
+        ctx.fillRect(-42, -3, 32, 3);
+        ctx.fillRect(6, 4, 34, 3);
+        ctx.fillRect(-24, 11, 31, 3);
+        ctx.restore();
+      }
+
+      function drawNestCrow(x, y, direction) {
+        ctx.save();
+        ctx.translate(x, y);
+        if (direction < 0) ctx.scale(-1, 1);
+        ctx.fillStyle = COLORS.crow;
+        ctx.fillRect(0, 11, 23, 23);
+        ctx.fillRect(14, 1, 16, 18);
+        ctx.fillRect(2, 28, 7, 9);
+        ctx.fillStyle = COLORS.crowLight;
+        ctx.fillRect(5, 17, 12, 9);
+        ctx.fillRect(8, 25, 8, 3);
+        ctx.fillStyle = COLORS.beak;
+        ctx.fillRect(28, 8, 9, 4);
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(23, 5, 3, 3);
+        ctx.fillStyle = COLORS.ink;
+        ctx.fillRect(24, 6, 1, 1);
+        ctx.restore();
+      }
+
+      function drawHeart(cx, cy, scale) {
+        const pattern = [
+          "0110110",
+          "1111111",
+          "1111111",
+          "0111110",
+          "0011100",
+          "0001000"
+        ];
+        ctx.fillStyle = COLORS.red;
+        for (let row = 0; row < pattern.length; row += 1) {
+          for (let col = 0; col < pattern[row].length; col += 1) {
+            if (pattern[row][col] === "1") {
+              ctx.fillRect(
+                Math.round(cx - (pattern[row].length * scale) / 2 + col * scale),
+                Math.round(cy + row * scale),
+                scale,
+                scale
+              );
+            }
+          }
+        }
+      }
+
+      function drawPixelText(text, centerX, y, scale, color) {
+        const characters = Array.from(text);
+        const widths = characters.map((character) => {
+          const normalized = character === "Ā" ? "A" : character === "ā" ? "a" : character;
+          const glyph = GLYPHS[normalized] || GLYPHS[" "];
+          return glyph[0].length + 1;
+        });
+        const totalWidth = (widths.reduce((sum, width) => sum + width, 0) - 1) * scale;
+        let cursorX = Math.round(centerX - totalWidth / 2);
+
+        ctx.fillStyle = color;
+        characters.forEach((character, index) => {
+          const normalized = character === "Ā" ? "A" : character === "ā" ? "a" : character;
+          const glyph = GLYPHS[normalized] || GLYPHS[" "];
+          const glyphY = y + 2 * scale;
+
+          if (character === "Ā" || character === "ā") {
+            ctx.fillRect(cursorX, y, 5 * scale, scale);
+          }
+
+          for (let row = 0; row < glyph.length; row += 1) {
+            for (let col = 0; col < glyph[row].length; col += 1) {
+              if (glyph[row][col] === "1") {
+                ctx.fillRect(cursorX + col * scale, glyphY + row * scale, scale, scale);
+              }
+            }
+          }
+          cursorX += widths[index] * scale;
+        });
+      }
+
+      function unlockAudio() {
+        if (muted) return;
+        if (!audioContext) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) return;
+          audioContext = new AudioContext();
+        }
+        if (audioContext.state === "suspended") audioContext.resume();
+      }
+
+      function sound(kind) {
+        if (muted || !audioContext) return;
+        const now = audioContext.currentTime;
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        const settings = {
+          start: [310, 0.08, "square"],
+          flap: [210, 0.055, "triangle"],
+          hit: [82, 0.2, "sawtooth"],
+          win: [520, 0.35, "square"]
+        }[kind];
+        if (!settings) return;
+
+        oscillator.type = settings[2];
+        oscillator.frequency.setValueAtTime(settings[0], now);
+        if (kind === "win") oscillator.frequency.linearRampToValueAtTime(780, now + settings[1]);
+        if (kind === "hit") oscillator.frequency.exponentialRampToValueAtTime(45, now + settings[1]);
+        gain.gain.setValueAtTime(0.045, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + settings[1]);
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start(now);
+        oscillator.stop(now + settings[1]);
+      }
+
+      function toggleSound() {
+        muted = !muted;
+        soundButton.textContent = muted ? "Sound: off" : "Sound: on";
+        soundButton.setAttribute("aria-pressed", String(muted));
+        if (!muted) {
+          unlockAudio();
+          sound("start");
+        }
+      }
+
+      function onKeyDown(event) {
+        if (event.code === "Space") {
+          event.preventDefault();
+          if (event.repeat) return;
+          if (state === STATE.PLAYING) jumpOrFlap();
+          else primaryAction();
+          return;
+        }
+
+        if (event.code === "Enter" && !event.repeat) {
+          if (state !== STATE.PLAYING) primaryAction();
+          return;
+        }
+
+        if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+          if (state === STATE.PLAYING) {
+            event.preventDefault();
+            shiftHeld = true;
+          }
+          return;
+        }
+
+        if (event.code === "Escape" && !event.repeat) {
+          if (state === STATE.PLAYING || state === STATE.PAUSED) togglePause();
+        }
+      }
+
+      function onKeyUp(event) {
+        if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+          shiftHeld = false;
+        }
+      }
+
+      function frame(now) {
+        const delta = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+
+        if (state === STATE.PLAYING) {
+          accumulator += delta;
+          while (accumulator >= STEP && state === STATE.PLAYING) {
+            update(STEP);
+            accumulator -= STEP;
+          }
+        } else {
+          accumulator = 0;
+        }
+
+        render(now / 1000);
+        requestAnimationFrame(frame);
+      }
+
+      mainAction.addEventListener("click", primaryAction);
+      pauseButton.addEventListener("click", togglePause);
+      soundButton.addEventListener("click", toggleSound);
+      window.addEventListener("keydown", onKeyDown, { passive: false });
+      window.addEventListener("keyup", onKeyUp);
+      window.addEventListener("blur", () => {
+        shiftHeld = false;
+        if (state === STATE.PLAYING) togglePause();
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && state === STATE.PLAYING) togglePause();
+      });
+
+      setState(STATE.TITLE);
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
