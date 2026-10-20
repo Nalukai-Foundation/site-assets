@@ -202,7 +202,7 @@ function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&
 function cardHTML(c) {
   var thumb, chip = c.chip, cta = c.cta;
   if (c.t === "photo") {
-    return '<a class="card photo-only" href="' + c.href + '" aria-label="See photos"><img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="533" loading="lazy"></a>';
+    return '<a class="card photo-only" href="' + c.href + '" target="_blank" rel="noopener" aria-label="See photos"><img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="533" loading="lazy"></a>';
   }
   if (c.t === "game") {
     chip = chip || "Game"; cta = cta || "Play";
@@ -217,9 +217,9 @@ function cardHTML(c) {
     chip = chip || "Photos"; cta = cta || "See photos";
     thumb = '<span class="photos"><span></span><span></span><span></span></span>';
   }
-  return '<article class="card' + (c.wide ? ' wide' : '') + '"><a class="thumb" href="' + c.href + '" aria-label="' + esc(cta + ": " + c.title) + '">' + thumb + '</a>' +
+  return '<article class="card' + (c.wide ? ' wide' : '') + '"><a class="thumb" href="' + c.href + '" target="_blank" rel="noopener" aria-label="' + esc(cta + ": " + c.title) + '">' + thumb + '</a>' +
     '<div class="body"><span class="chip">' + esc(chip) + '</span><h3>' + esc(c.title) + '</h3><p>' + esc(c.text) + '</p>' +
-    '<a class="go" href="' + c.href + '">' + esc(cta) + '</a></div></article>';
+    '<a class="go" href="' + c.href + '" target="_blank" rel="noopener">' + esc(cta) + '</a></div></article>';
 }
 
 function placeholders(n, type) {
