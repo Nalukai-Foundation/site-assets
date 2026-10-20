@@ -1,5 +1,5 @@
-import re, base64, os, sys
-CDN = os.environ.get('IMG_CDN','')
+import re, os, sys
+CDN = os.environ.get('IMG_CDN','https://cdn.jsdelivr.net/gh/Nalukai-Foundation/site-assets@main/img/')
 
 src = open('page/past-programs.source.html', encoding='utf-8').read()
 
@@ -72,11 +72,7 @@ js = js.replace('getElementById("main")', 'getElementById("pp-main")')
 js = js.replace('".seg button"', '"#pp-main .seg button"')
 # embed images as data URIs
 def embed(m):
-    if CDN:
-        return '"' + CDN + m.group(1)[4:] + '"'
-    path = './' + m.group(1)
-    b = base64.b64encode(open(path, 'rb').read()).decode()
-    return '"data:image/jpeg;base64,' + b + '"'
+    return '"' + CDN + m.group(1)[4:] + '"'
 js = re.sub(r'"(img/[\w.-]+\.jpg)"', embed, js)
 
 html = f'''<link rel="preconnect" href="https://fonts.googleapis.com">
