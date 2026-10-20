@@ -163,6 +163,7 @@ main .cards.three, main[data-cols] .cards.three { grid-template-columns: repeat(
 <script>
 /* Program list follows the Program choices in the Nalukai Alumni CRM (Airtable), newest first.
    Rows with `ph: n` are placeholders: n sample cards to show how a full row will look. */
+var GAMES = "https://nalukai-foundation.github.io/site-assets/games/";
 var RECAP = "https://nalukai.org/programs/alala-moku-recap";
 var YT = "https://www.youtube.com/watch?v=";
 var PROGRAMS = [
@@ -177,9 +178,9 @@ var PROGRAMS = [
     { t: "photos", title: "ʻAlalā Tracker", href: RECAP, text: "One of three apps built in two days with Keauhou Bird Conservation Center staff, who tested each design twice during the workshop." },
     { t: "photos", title: "ʻAlalā Feeder Monitor", href: RECAP, text: "Built around the remote feeding stations that will carry cameras, scales, RFID readers, and environmental sensors in the forest." },
     { t: "photos", title: "ʻAlalā Monitor", href: RECAP, text: "A third design direction for field staff, shaped by interviews with conservationists on day one." },
-    { t: "game", title: "Bird Catcher", href: "#", img: "img/bird-catcher.jpg", alt: "Bird Catcher, a match-three game with Hawaiian forest birds", text: "A match-three game built around Hawaiʻi's native forest birds, made to spread awareness of the ʻalalā." },
-    { t: "game", title: "Game Name", href: "#", text: "One sentence on how the game plays and what it teaches about the ʻalalā." },
-    { t: "game", title: "Game Name", href: "#", text: "One sentence on how the game plays and what it teaches about the ʻalalā." }
+    { t: "game", title: "Bird Catcher", href: GAMES + "BirdCatcher/", img: "img/bird-catcher.jpg", alt: "Bird Catcher, a match-three game with Hawaiian forest birds", text: "A match-three game built around Hawaiʻi's native forest birds, made to spread awareness of the ʻalalā." },
+    { t: "game", title: "ʻAlalā Run", href: GAMES + "AlalaRun/", img: "img/alala-run.jpg", alt: "ʻAlalā Run, a pixel-art side-scrolling game", text: "A side-scrolling run where you jump and duck through the forest to survive 60 seconds and make it home." },
+    { t: "game", title: "ʻAlalā Surfers", href: GAMES + "AlalaSurfers/", img: "img/alala-surfers.jpg", alt: "ʻAlalā Surfers, a high-speed forest run", text: "A high-speed run through Hawaiʻi’s living forest: collect tokens, dodge hazards and stay ahead of the feral cat." }
   ]},
   { name: "Maile Moku at Malipolipo", when: "April 16, 2026", where: "Upland Kona", three: true, note: 'Our Moku program pilot tested a 1-day format where students faced a specific issue in their moku. <a href="https://www.malipolipo.co">Malipolipo</a> is a nahele-first maile farm working towards the well-being of the forest ecosystem while also selling lei and fragrances.', cards: [
     { t: "photo", href: RECAP, img: "img/standin-1.jpg", alt: "Students walking along a rock wall at the shoreline (stand-in photo)" },
