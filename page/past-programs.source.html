@@ -1,0 +1,289 @@
+<title>Nalukai Past Programs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Poppins:wght@700&display=swap">
+<style>
+/* Layout: one row per program. Left rail = program name, dates, location (sticky). Right two columns = team cards, 2 or 3 across.
+   Palette and type are read from nalukai.org (Open Sans, Poppins nav, navy buttons, mint + teal bands). */
+:root {
+  --mint: #ebf5f3;
+  --teal: #496f69;
+  --forest: #223630;
+  --ink: #454545;
+  --navy: #091353;
+  --white: #ffffff;
+  --rule: #cfe0dc;
+  --font-body: "Open Sans", system-ui, sans-serif;
+  --font-nav: "Poppins", "Open Sans", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--white); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.55; letter-spacing: 0.01em; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--white); z-index: 10; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* Site header stand-in (the live Squarespace header replaces this) */
+.site-head { background: var(--forest); color: var(--white); }
+.site-head .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 28px; flex-wrap: wrap; }
+.wordmark { font-weight: 700; font-size: 28px; letter-spacing: 0.12em; text-decoration: none; }
+.site-nav { display: flex; align-items: center; gap: 28px; font-family: var(--font-nav); font-weight: 700; font-size: 13px; text-transform: uppercase; flex-wrap: wrap; }
+.site-nav a { text-decoration: none; }
+.site-nav a[aria-current] { text-decoration: underline; text-underline-offset: 4px; }
+.donate { background: var(--navy); padding: 12px 20px; border-radius: 6.4px; letter-spacing: 0.28em; font-family: var(--font-body); }
+
+/* Intro */
+.intro { padding-block: 56px 32px; }
+.eyebrow { font-weight: 700; font-size: 13px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--teal); margin: 0 0 12px; }
+h1 { font-weight: 600; font-size: clamp(34px, 5vw, 48px); line-height: 1.05; letter-spacing: -0.04em; margin: 0 0 16px; text-wrap: balance; }
+.intro p { max-width: 60ch; margin: 0; font-size: 20px; line-height: 1.5; }
+
+/* Prototype toolbar: cards across */
+.toolbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--white); border-block: 1px solid var(--rule); }
+.toolbar .wrap { display: flex; align-items: center; gap: 12px; padding-block: 10px; flex-wrap: wrap; }
+.toolbar .label { font-weight: 700; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--teal); }
+.seg { display: inline-flex; border: 2px solid var(--navy); border-radius: 6.4px; overflow: hidden; }
+.seg button { font: inherit; font-weight: 700; font-size: 13px; letter-spacing: 0.12em; min-width: 52px; padding: 8px 14px; border: 0; background: var(--white); color: var(--navy); cursor: pointer; }
+.seg button + button { border-left: 2px solid var(--navy); }
+.seg button[aria-pressed="true"] { background: var(--navy); color: var(--white); }
+.count { margin-left: auto; font-size: 14px; color: var(--teal); }
+
+/* Program rows */
+.program-row { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 2.2fr); gap: 28px; padding-block: 40px; border-top: 1px solid var(--rule); }
+.program { align-self: start; position: sticky; top: 76px; }
+.program h2 { font-weight: 600; font-size: clamp(21px, 1.9vw, 26px); line-height: 1.12; letter-spacing: -0.03em; margin: 0 0 10px; text-wrap: balance; }
+.program p { font-size: 16px; line-height: 1.45; margin: 0; }
+.program .when { font-weight: 600; }
+.program .more { margin-top: 12px; }
+.program .more a { color: var(--navy); font-weight: 700; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
+.program .more a:hover { color: var(--teal); }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-content: start; }
+main[data-cols="3"] .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+
+/* Team cards */
+.card { background: var(--mint); border-radius: 6.4px; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.card .thumb { display: block; text-decoration: none; padding: 18px 18px 0; }
+.card .body { padding: 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.chip { align-self: flex-start; font-weight: 700; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--teal); }
+.card h3 { font-weight: 600; font-size: 22px; line-height: 1.1; letter-spacing: -0.04em; margin: 0; }
+.card p { margin: 0; font-size: 15.5px; line-height: 1.5; }
+.go { margin-top: auto; align-self: flex-start; background: var(--navy); color: var(--white); text-decoration: none; font-weight: 700; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; padding: 13px 18px; border-radius: 6.4px; }
+.card .body p + .go { margin-top: 10px; }
+@media (min-width: 1021px) {
+  main[data-cols="3"] .card p { font-size: 13.5px; line-height: 1.45; }
+  main[data-cols="3"] .card .body { padding: 16px; gap: 7px; }
+}
+.go:hover { background: var(--teal); }
+
+/* Previews */
+.frame { display: block; border: 1px solid var(--rule); border-radius: 6.4px; overflow: hidden; background: var(--white); }
+.bar { display: flex; align-items: center; gap: 6px; padding: 7px 10px; background: var(--mint); border-bottom: 1px solid var(--rule); }
+.bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--rule); display: block; }
+.bar em { margin-left: 8px; font-style: normal; font-size: 11.5px; color: var(--teal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.frame img, .vid img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; object-position: top; }
+.vid { display: block; position: relative; border-radius: 6.4px; overflow: hidden; background: linear-gradient(135deg, var(--forest), var(--teal)); aspect-ratio: 16 / 9; }
+.vid .play { position: absolute; inset: 0; margin: auto; width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.94); display: grid; place-items: center; }
+.vid .play::after { content: ""; margin-left: 4px; border-style: solid; border-width: 8px 0 8px 14px; border-color: transparent transparent transparent var(--navy); }
+.photos { display: block; position: relative; aspect-ratio: 16 / 9; }
+.photos span { position: absolute; width: 52%; aspect-ratio: 4 / 3; clip-path: polygon(4% 8%, 96% 0, 100% 46%, 94% 94%, 6% 100%, 0 52%); }
+.photos span:nth-child(1) { left: 0; top: 10%; background: linear-gradient(135deg, var(--teal), #7aa59d); }
+.photos span:nth-child(2) { left: 24%; top: 0; background: linear-gradient(135deg, var(--forest), var(--teal)); }
+.photos span:nth-child(3) { right: 0; top: 14%; background: linear-gradient(135deg, #7aa59d, #b9d6d0); }
+
+.shot { display: block; aspect-ratio: 16 / 9; border-radius: 6.4px; overflow: hidden; background: linear-gradient(135deg, #2f5a46, #7aa59d); }
+.shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.card.wide { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+.card.wide .body { justify-content: center; }
+@media (max-width: 640px) { .card.wide { grid-template-columns: minmax(0, 1fr); } }
+.vid img[src^="http"] { object-position: center; }
+.cards .note { grid-column: 1 / -1; margin: 0; font-size: 15.5px; line-height: 1.55; }
+.cards .note a { color: var(--navy); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.card.photo-only { background: none; border-radius: 6.4px; text-decoration: none; }
+.card.photo-only img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 6.4px; }
+
+/* Footer stand-in */
+.site-foot { background: var(--forest); color: #dbe8e5; }
+.site-foot .wrap { padding-block: 40px; display: grid; gap: 12px; font-size: 15px; }
+.site-foot .links { font-weight: 700; font-size: 13px; letter-spacing: 0.16em; display: flex; gap: 18px; flex-wrap: wrap; }
+.site-foot a { text-decoration: none; }
+
+@media (max-width: 1020px) {
+  .program-row { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .program { position: static; }
+  main[data-cols="3"] .cards, .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  main[data-cols="3"] .cards, .cards { grid-template-columns: minmax(0, 1fr); }
+  .program-row { padding-block: 32px; }
+  .site-head .wrap { padding-block: 20px; }
+  .site-nav { gap: 16px; }
+  .count { margin-left: 0; width: 100%; }
+}
+/* Photo rows stay three across at every width and ignore the toggle */
+main .cards.three, main[data-cols] .cards.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+</style>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="wordmark" href="#">NALUKAI</a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="#" aria-current="page">Programs</a>
+      <a href="#">About</a>
+      <a href="#">Support</a>
+      <a class="donate" href="#">Donate</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" data-cols="3">
+  <section class="intro wrap">
+    <p class="eyebrow">Programs</p>
+    <h1>Past Programs</h1>
+    <p>Nalukai students choose a problem that matters in their own community and build a solution for it, whether that’s healthcare, housing or food security. Every program ends with Hōʻike, where student founders present a working idea to families, community partners and supporters. Browse what each cohort built.</p>
+  </section>
+
+  <div class="toolbar">
+    <div class="wrap">
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <div class="wrap" id="rows"></div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="links"><a href="#">HOME</a><a href="#">PROGRAMS</a><a href="#">ABOUT</a><a href="#">SUPPORT</a></div>
+    <div>aloha@nalukai.org</div>
+    <div>Nalukai Foundation is a 501(c)3 non-profit organization • Tax ID: 46-1377090 • © 2016-2026 All Rights Reserved</div>
+  </div>
+</footer>
+
+<script>
+/* Program list follows the Program choices in the Nalukai Alumni CRM (Airtable), newest first.
+   Rows with `ph: n` are placeholders: n sample cards to show how a full row will look. */
+var RECAP = "https://nalukai.org/programs/alala-moku-recap";
+var YT = "https://www.youtube.com/watch?v=";
+var PROGRAMS = [
+  { name: "Fall 2026", when: "October 5–9 and 11, 2026", where: "UH Hilo Ka Haka ʻUla O Keʻelikōlani", cards: [
+    { t: "site", title: "Kaulike Housing", host: "kaulikehousing.lovable.app", href: "https://kaulikehousing.lovable.app", img: "img/kaulike-housing.jpg", alt: "Kaulike Housing welcome screen with a Hawaiian plantation-style house", text: "Connects Hawaiʻi Island homeowners who want to keep their homes in the community with qualified local buyers, with a prep checklist and mortgage calculator." },
+    { t: "site", title: "Standby Moku", host: "standbymoku.lovable.app", href: "https://standbymoku.lovable.app", img: "img/standby-moku.jpg", alt: "Standby Moku home page showing a locked-in barge pallet price from Hilo to Honolulu", text: "Lets farmers book a specific Hilo or Kawaihae sailing to Oʻahu with a locked price up front and a 5% discount for booking seven days ahead." },
+    { t: "site", title: "Loko Kālā", host: "lokokala.lovable.app", href: "https://lokokala.lovable.app", img: "img/loko-kala.jpg", alt: "Loko Kālā home page with three students reviewing a budget", text: "Helps students compare participating banks, meet a bank representative by video, and practice budgeting, with their information kept private from schools and employers." },
+    { t: "site", title: "Limu 2 Land", host: "limu2land.lovable.app", href: "https://limu2land.lovable.app", img: "img/limu-2-land.jpg", alt: "Limu 2 Land home page: From Ocean to ʻĀina, over a Hawaiʻi Island shoreline", text: "Turns invasive limu removed by volunteers into fertilizer for local farms and gardens, with a guide to telling native limu from invasive." },
+    { t: "video", title: "Mālama Miles", href: "https://drive.google.com/file/d/1rSSPrzk4VhEkfNUR40ssNAEWXi2LNO27/view?usp=sharing", chip: "Demo video", cta: "Watch the demo", text: "A road-safety app that warns drivers of hazards on Hawaiʻi Island and rewards safe driving with discounts at local businesses." }
+  ]},
+  { name: "ʻAlalā Moku Workshop", when: "September 5–6, 2026", where: "Kaiāulu Hub, Prince Kūhiō Plaza", more: RECAP, cards: [
+    { t: "photos", title: "ʻAlalā Tracker", href: RECAP, text: "One of three apps built in two days with Keauhou Bird Conservation Center staff, who tested each design twice during the workshop." },
+    { t: "photos", title: "ʻAlalā Feeder Monitor", href: RECAP, text: "Built around the remote feeding stations that will carry cameras, scales, RFID readers, and environmental sensors in the forest." },
+    { t: "photos", title: "ʻAlalā Monitor", href: RECAP, text: "A third design direction for field staff, shaped by interviews with conservationists on day one." },
+    { t: "game", title: "Bird Catcher", href: "#", img: "img/bird-catcher.jpg", alt: "Bird Catcher, a match-three game with Hawaiian forest birds", text: "A match-three game built around Hawaiʻi's native forest birds, made to spread awareness of the ʻalalā." },
+    { t: "game", title: "Game Name", href: "#", text: "One sentence on how the game plays and what it teaches about the ʻalalā." },
+    { t: "game", title: "Game Name", href: "#", text: "One sentence on how the game plays and what it teaches about the ʻalalā." }
+  ]},
+  { name: "Maile Moku at Malipolipo", when: "April 16, 2026", where: "Upland Kona", three: true, note: 'Our Moku program pilot tested a 1-day format where students faced a specific issue in their moku. <a href="https://www.malipolipo.co">Malipolipo</a> is a nahele-first maile farm working towards the well-being of the forest ecosystem while also selling lei and fragrances.', cards: [
+    { t: "photo", href: RECAP, img: "img/standin-1.jpg", alt: "Students walking along a rock wall at the shoreline (stand-in photo)" },
+    { t: "photo", href: RECAP, img: "img/standin-2.jpg", alt: "Students mapping ideas on posters at a window (stand-in photo)" },
+    { t: "photo", href: RECAP, img: "img/standin-3.jpg", alt: "A short-eared owl on a fence post (stand-in photo)" }
+  ]},
+  { name: "Spring 2026", when: "March 2026", where: "Parker School & Kanu o ka ʻĀina, Waimea", cards: [
+    { t: "site", title: "The Physician Mission", host: "the-physician-mission.lovable.app", href: "https://the-physician-mission.lovable.app", img: "img/physician-mission.jpg", alt: "The Physician Mission home page: Educational Wealth, Building Equitable Health", text: "Expands access to specialized medical education and pathways for Hawaiʻi-based students and physicians, to strengthen the local healthcare workforce and reduce reliance on off-island care." },
+    { t: "site", title: "Kōkua Connect", host: "kokua-connect-hawaii.lovable.app", href: "https://kokua-connect-hawaii.lovable.app", img: "img/kokua-connect.jpg", alt: "Kōkua Connect home page: preparedness, recovery, community", text: "A disaster preparedness and recovery platform focused on the overlooked phase before a crisis, helping communities organize resources, plans and support so families can recover and return home." },
+    { t: "site", title: "Wili Foundation", host: "wilifoundation.lovable.app", href: "https://wilifoundation.lovable.app", img: "img/wili-foundation.jpg", alt: "Wili Foundation home page: rooted in community, built for the future", text: "A workforce-to-housing pipeline that trains local youth in the trades while building affordable homes, connecting students, mentors and community partners." },
+    { t: "site", title: "Moʻolelo Publishing Co.", host: "moolelopublishingco.lovable.app", href: "https://moolelopublishingco.lovable.app", img: "img/moolelo-publishing.jpg", alt: "Moʻolelo Publishing Co. home page: stories of Hawaiʻi personalized for your keiki", text: "A personalized children’s book platform that puts Hawaiʻi’s stories in the hands of visiting families, partnering with resorts and creating income for local writers and artists." }
+  ]},
+  { name: "Fall 2025", when: "October 2025 (Hōʻike October 11)", where: "UH Hilo Ka Haka ʻUla O Keʻelikōlani", ph: 4 },
+  { name: "Summer 2025", when: "June 20–29, 2025", where: "Hawaiʻi Pacific University & Liliʻuokalani Center, Oʻahu", cards: [
+    { t: "video", wide: true, title: "Nalukai 2025 Recap", href: YT + "2yNUyMJyAsQ", img: "https://i.ytimg.com/vi/2yNUyMJyAsQ/hqdefault.jpg", chip: "Recap video", cta: "Watch the video", text: "A look back at the 2025 program and the students who took part." }
+  ]},
+  { name: "Spring 2025", ph: 3 },
+  { name: "Summer 2024", when: "July 5–14, 2024", where: "UH Hilo", cards: [
+    { t: "video", title: "Pivot", href: YT + "qXAPOlzKb24", img: "img/pivot.jpg", alt: "Pivot team, 2024 Hōʻike pitch", chip: "Hōʻike video", cta: "Watch the pitch", text: "A youth-run marketing firm that connects Hawaiʻi students' digital skills with local mom-and-pop businesses that need to get online." },
+    { t: "video", title: "DOSTEM Hawaiʻi", href: YT + "r270ZIHD5AM", img: "img/dostem-hawaii.jpg", alt: "DOSTEM Hawaiʻi team, 2024 Hōʻike pitch", chip: "Hōʻike video", cta: "Watch the pitch", text: "Watch the team's 2024 Hōʻike pitch." },
+    { t: "video", title: "Manaʻo Wellness", href: YT + "yqs2pmcHLtA", img: "img/manao-wellness.jpg", alt: "Manaʻo Wellness team, 2024 Hōʻike pitch", chip: "Hōʻike video", cta: "Watch the pitch", text: "Watch the team's 2024 Hōʻike pitch." },
+    { t: "video", title: "ʻAe, Hawaiʻi", href: YT + "q6G5eaklHbY", img: "img/ae-hawaii.jpg", alt: "ʻAe, Hawaiʻi team, 2024 Hōʻike pitch", chip: "Hōʻike video", cta: "Watch the pitch", text: "Watch the team's 2024 Hōʻike pitch." },
+    { t: "video", title: "Thrive", href: YT + "C0pHURXt2XM", img: "img/thrive.jpg", alt: "Thrive team, 2024 Hōʻike pitch", chip: "Hōʻike video", cta: "Watch the pitch", text: "Watch the team's 2024 Hōʻike pitch." },
+    { t: "video", title: "Hale Kōkua", href: YT + "iYOtShmLfmI", img: "https://i.ytimg.com/vi/iYOtShmLfmI/hqdefault.jpg", text: "Watch the team’s 2024 Hōʻike pitch." }
+  ]},
+  { name: "Spring 2024", when: "March 2024", where: "Kanu o ka ʻĀina, Waimea", ph: 3 },
+  { name: "Fall 2023", ph: 4 },
+  { name: "Summer 2023", where: "UH Hilo", cards: [
+    { t: "video", title: "Uluna", href: YT + "RfqsODKr6VI", img: "https://i.ytimg.com/vi/RfqsODKr6VI/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." },
+    { t: "video", title: "Hoʻohonua", href: YT + "VEurEyxRns4", img: "https://i.ytimg.com/vi/VEurEyxRns4/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." },
+    { t: "video", title: "EcoCell", href: YT + "xet9fu0_M2s", img: "https://i.ytimg.com/vi/xet9fu0_M2s/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." },
+    { t: "video", title: "CanGoCollege", href: YT + "WAiYBw5Ge3M", img: "https://i.ytimg.com/vi/WAiYBw5Ge3M/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." },
+    { t: "video", title: "Puaʻa", href: YT + "QVAqMlJ4uuI", img: "https://i.ytimg.com/vi/QVAqMlJ4uuI/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." },
+    { t: "video", title: "Pūʻolo Hawaiʻi", href: YT + "sBRGm6ddO6I", img: "https://i.ytimg.com/vi/sBRGm6ddO6I/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." },
+    { t: "video", title: "Hina Ea", href: YT + "EtXbAU_p9os", img: "https://i.ytimg.com/vi/EtXbAU_p9os/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." }
+  ]},
+  { name: "Fall 2022", ph: 3 },
+  { name: "Summer 2022", where: "UH Hilo", cards: [
+    { t: "video", wide: true, title: "Startup Camp 2022", href: YT + "h3_qQr6Eeo0", img: "https://i.ytimg.com/vi/h3_qQr6Eeo0/hqdefault.jpg", chip: "Program video", cta: "Watch the video", text: "Highlights from the 2022 Nalukai Academy Startup Camp on Hawaiʻi Island." }
+  ]},
+  { name: "Summer 2021 (Virtual)", ph: 4 },
+  { name: "Summer 2020 (Virtual)", cards: [
+    { t: "video", wide: true, title: "Nalukai 2020 Recap", href: YT + "GPcl92VVZF0", img: "https://i.ytimg.com/vi/GPcl92VVZF0/hqdefault.jpg", chip: "Recap video", cta: "Watch the video", text: "The 2020 virtual program, start to finish." }
+  ]},
+  { name: "Summer 2019", where: "UH Hilo", cards: [
+    { t: "video", wide: true, title: "Startup Camp 2019: Hawaiʻi Island", href: YT + "b7yMybwsf9M", img: "https://i.ytimg.com/vi/b7yMybwsf9M/hqdefault.jpg", chip: "Program video", cta: "Watch the video", text: "Highlights from the 2019 camp on Hawaiʻi Island." }
+  ]},
+  { name: "Summer 2019", where: "Hale ʻInana, Oʻahu", cards: [
+    { t: "video", wide: true, title: "Oʻahu Showcase", href: YT + "JEf3iUbPTo0", img: "https://i.ytimg.com/vi/JEf3iUbPTo0/hqdefault.jpg", chip: "Program video", cta: "Watch the video", text: "The 2019 Oʻahu cohort presents their startups." }
+  ]},
+  { name: "Summer 2018", cards: [
+    { t: "video", wide: true, title: "2018 Cohort", href: YT + "7RIbout63tY", img: "https://i.ytimg.com/vi/7RIbout63tY/hqdefault.jpg", chip: "Program video", cta: "Watch the video", text: "Meet the 2018 cohort of Hawaiʻi youth." }
+  ]},
+  { name: "Summer 2017", when: "July 22–31, 2017", where: "Hawaiʻi Preparatory Academy", ph: 3 },
+  { name: "Summer 2016", cards: [
+    { t: "video", wide: true, title: "Summer Hacker Camp 2016", href: YT + "s-f3MxRm6KE", img: "https://i.ytimg.com/vi/s-f3MxRm6KE/hqdefault.jpg", chip: "Program video", cta: "Watch the video", text: "The first Nalukai summer camp." }
+  ]}
+];
+
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+function cardHTML(c) {
+  var thumb, chip = c.chip, cta = c.cta;
+  if (c.t === "photo") {
+    return '<a class="card photo-only" href="' + c.href + '" aria-label="See photos"><img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="533" loading="lazy"></a>';
+  }
+  if (c.t === "game") {
+    chip = chip || "Game"; cta = cta || "Play";
+    thumb = '<span class="shot">' + (c.img ? '<img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="581" loading="lazy">' : "") + '</span>';
+  } else if (c.t === "site") {
+    chip = chip || "Prototype"; cta = cta || "View the prototype";
+    thumb = '<span class="frame"><img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="450" loading="lazy"></span>';
+  } else if (c.t === "video") {
+    chip = chip || "Hōʻike video"; cta = cta || "Watch the pitch";
+    thumb = '<span class="vid">' + (c.img ? '<img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="450" loading="lazy">' : "") + '<span class="play"></span></span>';
+  } else {
+    chip = chip || "Photos"; cta = cta || "See photos";
+    thumb = '<span class="photos"><span></span><span></span><span></span></span>';
+  }
+  return '<article class="card' + (c.wide ? ' wide' : '') + '"><a class="thumb" href="' + c.href + '" aria-label="' + esc(cta + ": " + c.title) + '">' + thumb + '</a>' +
+    '<div class="body"><span class="chip">' + esc(chip) + '</span><h3>' + esc(c.title) + '</h3><p>' + esc(c.text) + '</p>' +
+    '<a class="go" href="' + c.href + '">' + esc(cta) + '</a></div></article>';
+}
+
+function placeholders(n, type) {
+  var out = [];
+  for (var i = 0; i < n; i++) {
+    out.push({ t: type || "photos", title: "Team Name", href: "#", text: "One or two sentences on the problem the team chose and what their solution does for Hawaiʻi." });
+  }
+  return out;
+}
+
+var rows = document.getElementById("rows"), html = "", cardTotal = 0;
+var SEASON = { Spring: "https://nalukai.org/programs/spring", Summer: "https://nalukai.org/programs/summer", Fall: "https://nalukai.org/programs/fall" };
+PROGRAMS.forEach(function (p, i) {
+  var more = p.more || SEASON[p.name.split(" ")[0]];
+  var cards = p.cards || placeholders(p.ph, p.phType);
+  cardTotal += cards.length;
+  html += '<section class="program-row" aria-labelledby="p' + i + '"><div class="program"><h2 id="p' + i + '">' + esc(p.name) + '</h2>' +
+    '<p class="when">' + esc(p.when || "Dates") + '</p><p class="where">' + esc(p.where || "Location") + '</p>' + (more ? '<p class="more"><a href="' + more + '">Read more</a></p>' : '') + '</div>' +
+    '<div class="cards' + (p.three ? ' three' : '') + '">' + cards.map(cardHTML).join("") + (p.note ? '<p class="note">' + p.note + '</p>' : '') + '</div></section>';
+});
+rows.innerHTML = html;
+var STUDENTS_SERVED = "400+"; /* Allen, Oct 20, 2026: true count is over 400; Airtable (380 records) is incomplete */
+document.getElementById("count").textContent = PROGRAMS.length + " programs, " + STUDENTS_SERVED + " students served";
+
+</script>
