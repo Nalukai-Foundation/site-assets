@@ -219,7 +219,11 @@ var PROGRAMS = [
     { t: "video", title: "Pūʻolo Hawaiʻi", href: YT + "sBRGm6ddO6I", img: "https://i.ytimg.com/vi/sBRGm6ddO6I/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." },
     { t: "video", title: "Hina Ea", href: YT + "EtXbAU_p9os", img: "https://i.ytimg.com/vi/EtXbAU_p9os/hqdefault.jpg", text: "Watch the team’s 2023 Hōʻike pitch." }
   ]},
-  { name: "Fall 2022", when: "October 16 – December 18, 2022", where: "Parker School, Waimea, and online", ph: 3 },
+  { name: "Fall 2022", when: "October 16 – December 18, 2022", where: "Parker School, Waimea, and online", three: true, cards: [
+    { t: "photo", img: "img/fall22-1.jpg", alt: "Student sketching an app design on a whiteboard" },
+    { t: "photo", img: "img/fall22-2.jpg", alt: "A student team presenting their idea at the front of the room" },
+    { t: "photo", img: "img/fall22-3.jpg", alt: "Fall 2022 cohort together in front of a mural" }
+  ]},
   { name: "Summer 2022", when: "July 7–17, 2022", where: "UH Hilo", cards: [
     { t: "video", wide: true, title: "Startup Camp 2022", href: YT + "h3_qQr6Eeo0", img: "https://i.ytimg.com/vi/h3_qQr6Eeo0/hqdefault.jpg", chip: "Program video", cta: "Watch the video", text: "Highlights from the 2022 Nalukai Academy Startup Camp on Hawaiʻi Island." }
   ]},
@@ -247,7 +251,9 @@ function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&
 function cardHTML(c) {
   var thumb, chip = c.chip, cta = c.cta;
   if (c.t === "photo") {
-    return '<a class="card photo-only" href="' + c.href + '" target="_blank" rel="noopener" aria-label="See photos"><img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="533" loading="lazy"></a>';
+    var pimg = '<img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="533" loading="lazy">';
+    if (!c.href) return '<div class="card photo-only">' + pimg + '</div>';
+    return '<a class="card photo-only" href="' + c.href + '" target="_blank" rel="noopener" aria-label="See photos">' + pimg + '</a>';
   }
   if (c.t === "game") {
     chip = chip || "Game"; cta = cta || "Play";
