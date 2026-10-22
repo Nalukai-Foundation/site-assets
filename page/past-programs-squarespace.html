@@ -231,9 +231,8 @@ function placeholders(n, type) {
 }
 
 var rows = document.getElementById("pp-rows"), html = "", cardTotal = 0;
-var SEASON = { Spring: "https://nalukai.org/programs/spring", Summer: "https://nalukai.org/programs/summer", Fall: "https://nalukai.org/programs/fall" };
 PROGRAMS.forEach(function (p, i) {
-  var more = p.more || SEASON[p.name.split(" ")[0]];
+  var more = p.more;
   var cards = p.cards || placeholders(p.ph, p.phType);
   cardTotal += cards.length;
   html += '<section class="program-row" aria-labelledby="p' + i + '"><div class="program"><h2 id="p' + i + '">' + esc(p.name) + '</h2>' +
