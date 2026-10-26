@@ -99,6 +99,8 @@ main[data-cols="3"] .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); g
 .vid img[src^="http"] { object-position: center; }
 .cards .note { grid-column: 1 / -1; margin: 0; font-size: 15.5px; line-height: 1.55; }
 .cards .note a { color: var(--navy); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.card.soon { grid-column: 1 / -1; }
+.card.soon .body { padding: 22px 24px; }
 .card.photo-only { background: none; border-radius: 6.4px; text-decoration: none; }
 .card.photo-only img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 6.4px; }
 
@@ -239,7 +241,9 @@ var PROGRAMS = [
   { name: "Summer 2022", when: "July 7–17, 2022", where: "UH Hilo", cards: [
     { t: "video", wide: true, title: "Startup Camp 2022", href: YT + "h3_qQr6Eeo0", img: "https://i.ytimg.com/vi/h3_qQr6Eeo0/hqdefault.jpg", chip: "Program video", cta: "Watch the video", text: "Highlights from the 2022 Nalukai Academy Startup Camp on Hawaiʻi Island." }
   ]},
-  { name: "Summer 2021 (Virtual)", when: "July 5–17, 2021", where: "Online", ph: 4 },
+  { name: "Summer 2021 (Virtual)", when: "July 5–17, 2021", where: "Online", cards: [
+    { t: "soon", chip: "Coming soon", title: "Recap coming soon", text: "We’re still gathering photos and videos from our first virtual summer. Check back soon." }
+  ]},
   { name: "Summer 2020 (Virtual)", when: "July 1–16, 2020", where: "Online", cards: [
     { t: "video", wide: true, title: "Nalukai 2020 Recap", href: YT + "GPcl92VVZF0", img: "https://i.ytimg.com/vi/GPcl92VVZF0/hqdefault.jpg", chip: "Recap video", cta: "Watch the video", text: "The 2020 virtual program, start to finish." }
   ]},
@@ -266,6 +270,9 @@ function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&
 
 function cardHTML(c) {
   var thumb, chip = c.chip, cta = c.cta;
+  if (c.t === "soon") {
+    return '<article class="card soon"><div class="body"><span class="chip">' + esc(c.chip || "Coming soon") + '</span><h3>' + esc(c.title) + '</h3><p>' + esc(c.text) + '</p></div></article>';
+  }
   if (c.t === "photo") {
     var pimg = '<img src="' + c.img + '" alt="' + esc(c.alt || "") + '" width="800" height="533" loading="lazy">';
     if (!c.href) return '<div class="card photo-only">' + pimg + '</div>';
